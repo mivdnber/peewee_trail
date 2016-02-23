@@ -1,3 +1,4 @@
+import collections
 from peewee import *
 
 class DateTimeTZRangeField(Field):
@@ -38,8 +39,13 @@ class History(Model):
                 if isinstance(getattr(cls, name), ForeignKeyField)
             ])
 
+            class HistoryMeta:
+                database = cls._meta.database
+
+            attrs['Meta'] = HistoryMeta
+
             # Dynamically create the new model
-            cls._history = type(cls.__name__ + 'History', (HistoryModel, cls), attrs)
+            cls._history = type(cls.__name__ + 'History', (HistoryBase, cls), attrs)
         return cls._history
 
     @classmethod

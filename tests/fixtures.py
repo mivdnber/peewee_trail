@@ -1,6 +1,6 @@
 from pytest import *
-from peewee import *
-from playhouse.postgres_ext import *
+from playhouse.postgres_ext import PostgresqlExtDatabase, register_hstore
+from peewee import Model, TextField, IntegerField, ForeignKeyField
 from pytest_dbfixtures.plugin import postgresql
 import psycopg2
 from psycopg2 import extensions as pg_extensions
@@ -24,24 +24,44 @@ class PostgresqlExtDatabaseFromConnection(PostgresqlExtDatabase):
 @yield_fixture
 def db(postgresql):
     with postgresql.cursor() as cur:
-        cur.execute('create extension hstore')
+        cur.execute('''
+            create extension hstore;
+            create extension temporal_tables;
+        ''')
 
-    db = PostgresqlExtDatabaseFromConnection(postgresql)
+    db = PostgresqlExtDatabaseFromConnection(postgresql, register_hstore=False)
     db.connect()
     yield db
     db.close()
 
 @yield_fixture
 def models(db):
+    from peewee_trail import History
+
+    class BaseModel(Model):
+        class Meta(object):
+            database = db
+
+    class BasicModel(BaseModel, History):
+        foo = TextField()
+        bar = IntegerField()
+
+
+    class ReferencedModel(BaseModel):
+        lol = TextField()
+
+    class FKModel(BaseModel, History):
+        ref = ForeignKeyField(ReferencedModel, on_delete='CASCADE', related_name='haha')
+
     class models:
-        class BaseModel(Model):
-            class Meta(object):
-                database = db
+        pass
 
-        class BasicModel(BaseModel):
-            foo = TextField()
-            bar = IntegerField()
+    all_models = [BasicModel, ReferencedModel, FKModel]
 
-    db.create_tables([models.BasicModel])
+    for m in all_models:
+        setattr(models, m.__name__, m)
+
+    #import pdb; pdb.set_trace()
+    db.create_tables(all_models)
     yield models
-    db.drop_tables([models.BasicModel])
+    db.drop_tables(all_models)
