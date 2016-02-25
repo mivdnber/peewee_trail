@@ -1,6 +1,6 @@
 sudo: required
 before_install:
-  - sudo apt-get install pgxnclient
+  - sudo apt-get install pgxnclient postgresql-server-dev-all
   - sudo pgxn install temporal_tables
 language: python
 python:
