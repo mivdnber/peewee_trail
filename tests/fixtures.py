@@ -6,6 +6,10 @@ import psycopg2
 from psycopg2 import extensions as pg_extensions
 
 class PostgresqlExtDatabaseFromConnection(PostgresqlExtDatabase):
+    '''This is a dirty hack to pass an already instanciated psycopg2 connction
+    to PostgresqlExtDatabase. Don't get any ideas.
+    '''
+
     def _connect(self, database, encoding=None, **kwargs):
         if not psycopg2:
             raise ImproperlyConfigured('psycopg2 must be installed.')
