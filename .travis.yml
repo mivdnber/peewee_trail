@@ -9,3 +9,7 @@ python:
   - "3.5"
 install: pip install tox-travis
 script: tox
+addons:
+  postgresql: "9.2"
+services:
+  - postgresql
